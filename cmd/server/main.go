@@ -4,9 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/GanFay/go-url-shortener/internal/config"
+	"github.com/GanFay/go-url-shortener/internal/httpx"
 )
 
 func main() {
+
+	cfg := config.Load()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", health)
 	mux.HandleFunc("/version", version)
