@@ -10,10 +10,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", health)
 	mux.HandleFunc("/version", version)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
+	if err := http.ListenAndServe(":8080", mux); err != nil {
 		fmt.Println("server error:", err)
-		return
 	}
 	fmt.Println("server started on port 8080")
 }
