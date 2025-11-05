@@ -12,3 +12,4 @@ bin/
 .env
 /.idea
 
+pgadm.env

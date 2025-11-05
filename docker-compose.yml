@@ -19,8 +19,8 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ../Dockerfile
     container_name: urlshort-app
     depends_on:
       db:
@@ -31,6 +31,15 @@ services:
       DB_DSN: "postgres://app:app@db:5432/app?sslmode=disable"
     ports:
       - "8080:8080"
-
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    env_file:
+      - pgadm.env
+    volumes:
+      - ./data/pgadmin/:/var/lib/pgadmin
 volumes:
   dbdata:
