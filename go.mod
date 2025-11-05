@@ -1,4 +1,4 @@
-module v1
+module github.com/GanFay/go-url-shortener
 
 
 
