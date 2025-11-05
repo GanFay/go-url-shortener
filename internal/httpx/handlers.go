@@ -20,6 +20,7 @@ func (h *Handlers) Health(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Fprintln(w, "ok")
+	fmt.Println("ussed command /health")
 }
 
 func (h *Handlers) Version(w http.ResponseWriter, r *http.Request) {
@@ -29,4 +30,5 @@ func (h *Handlers) Version(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	fmt.Fprintln(w, h.cfg.Version)
+	fmt.Println("ussed command /version")
 }
