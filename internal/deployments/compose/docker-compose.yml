@@ -19,8 +19,8 @@ services:
 
   app:
     build:
-      context: ..
-      dockerfile: ../Dockerfile
+      context: ../../..
+      dockerfile: internal/deployments/docker/Dockerfile
     container_name: urlshort-app
     depends_on:
       db:
@@ -38,8 +38,11 @@ services:
     ports:
       - "8888:80"
     env_file:
-      - pgadm.env
+      - ../../../pgadm.env
     volumes:
       - ./data/pgadmin/:/var/lib/pgadmin
 volumes:
   dbdata:
+
+
+
