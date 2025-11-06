@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -17,6 +17,7 @@ func main() {
 	if _, err := os.Stat(".env"); err == nil {
 		_ = godotenv.Load(".env")
 	}
+
 	cfg := config.Load()
 	db, err := sql.Open("pgx", cfg.DB_DSN)
 	if err != nil {
@@ -26,9 +27,23 @@ func main() {
 		panic("db not reachable: " + err.Error())
 	}
 	mux := httpx.NewRouter(cfg, db)
-	addr := ":" + cfg.Port
-	fmt.Println("Listening on", addr, "version:", cfg.Version)
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		fmt.Println("server error:", err)
+
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})))
+
+	handler := httpx.WithMiddleware(
+		mux,
+		httpx.Recoverer(),
+		httpx.RequestID(),
+		httpx.Logger(),
+	)
+
+	srv := &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: handler, // ← используем обёрнутый
+	}
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("listen: %s\n", err)
 	}
 }
