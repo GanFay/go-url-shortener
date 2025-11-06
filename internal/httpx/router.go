@@ -14,5 +14,7 @@ func NewRouter(cfg config.Config, db *sql.DB) *http.ServeMux {
 	mux.HandleFunc("/health", h.Health)
 	mux.HandleFunc("/version", h.Version)
 	mux.HandleFunc("/db/ping", h.DBPing)
+	mux.HandleFunc("/shorten", h.Shorten)
+	mux.HandleFunc("/u/", h.Resolve)
 	return mux
 }
