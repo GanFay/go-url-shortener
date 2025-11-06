@@ -54,24 +54,45 @@ func (h *Handlers) Shorten(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	var req shortenRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil || req.URL == "" {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || strings.TrimSpace(req.URL) == "" {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	code := generateCode(6)
-	_, err = h.db.Exec(`INSERT INTO urls (code, original_url) VALUES ($1, $2)`, code, req.URL)
-	if err != nil {
-		http.Error(w, "failed to save", http.StatusInternalServerError)
+	var existingCode string
+	err := h.db.QueryRow(`SELECT code FROM urls WHERE original_url = $1`, req.URL).Scan(&existingCode)
+	if err == nil {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"url":"http://localhost:8080/u/%s","code":"%s","existing":true}`, existingCode, existingCode)
+		return
+	} else if err != sql.ErrNoRows {
+		http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	resp := map[string]string{"short_url": fmt.Sprintf("http://localhost:8080/u/%s", code)}
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		fmt.Printf("failed to write response: %v\n", err)
-		return
+
+	for attmpt := 0; attmpt < 5; attmpt++ {
+		code := generateCode(6)
+
+		var insrt string
+		err = h.db.QueryRow(
+			`INSERT INTO urls (original_url, code)
+					VALUES ($1, $2)
+					ON CONFLICT (code) DO NOTHING
+					RETURNING code`, req.URL, code).Scan(&insrt)
+
+		if err == nil {
+			short := fmt.Sprintf("http://localhost:8080/u/%s", insrt)
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Location", short)
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprintf(w, `{"url":"%s","code":"%s", "existing":false}`, short, insrt)
+			return
+		}
+		if err.Error() != "sql: no rows in result set" {
+			http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
+	http.Error(w, "could not generate unique code", http.StatusConflict)
 }
 
 func (h *Handlers) DBPing(w http.ResponseWriter, r *http.Request) {
