@@ -1,12 +1,15 @@
 package httpx
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/GanFay/go-url-shortener/internal/config"
 )
@@ -44,6 +47,20 @@ func (h *Handlers) Resolve(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	res, err := h.db.ExecContext(ctx, `UPDATE public.urls SET clicks = clicks + 1 WHERE code = $1`, code)
+	if err != nil {
+		slog.Error("failed to update clicks", "code", code, "err", err)
+	} else {
+		affected, _ := res.RowsAffected()
+		if affected == 0 {
+			slog.Warn("no rows updated (invalid code?)", "code", code)
+		}
+	}
+
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
