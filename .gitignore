@@ -12,4 +12,5 @@ bin/
 .env
 /.idea
 
-pgadm.env
+internal/deployments/compose/data
+internal/deployments/compose/datadb
